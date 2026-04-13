@@ -87,7 +87,10 @@
             height: 44px;
             width: 44px;
             border-radius: 50%;
-            object-fit: contain;
+            object-fit: cover;
+            background: #000;
+            display: block;
+            flex-shrink: 0;
         }
 
         .logo span {
@@ -415,11 +418,12 @@
             background: transparent;
             border: none;
             color: var(--text-secondary);
-            padding: 10px 24px;
+            padding: clamp(6px, 2vw, 10px) clamp(10px, 3vw, 24px);
             border-radius: 100px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: clamp(0.75rem, 2.5vw, 0.95rem);
             font-weight: 500;
+            white-space: nowrap;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -485,10 +489,10 @@
         }
 
         .timer-display {
-            font-size: 5.5rem;
+            font-size: clamp(3rem, 14vw, 5.5rem);
             font-weight: 200;
             color: var(--text-primary);
-            letter-spacing: -2px;
+            letter-spacing: clamp(-2px, -0.3vw, 0px);
             z-index: 2;
         }
 
@@ -497,7 +501,7 @@
             color: var(--text-secondary);
             letter-spacing: 4px;
             text-transform: uppercase;
-            margin-top: -10px;
+            margin-top: 4px;
             z-index: 2;
         }
 
@@ -809,12 +813,10 @@
                 gap: 24px;
             }
             .timer-circle {
-                width: 260px;
-                height: 260px;
+                width: clamp(220px, 75vw, 320px);
+                height: clamp(220px, 75vw, 320px);
             }
-            .timer-display {
-                font-size: 4.5rem;
-            }
+            /* timer-display font-size handled globally by clamp() */
         }
     </style>
 </head>
@@ -1346,7 +1348,7 @@
                     </div>
                     <div class="todo-list">
                         ${dayTasks.map(t => `
-                            <div class="todo-item ${t.completed ? 'completed' : ''}" style="padding: 10px; border-radius: 12px; margin-bottom: 5px; font-size: 0.8rem;">
+                            <div class="todo-item ${t.completed ? 'completed' : ''}" data-tag="${t.tag}" style="padding: 10px; border-radius: 12px; margin-bottom: 5px; font-size: 0.8rem;">
                                 <span class="todo-text">${t.text}</span>
                             </div>
                         `).join('')}
@@ -1368,7 +1370,7 @@
                 <div class="day-focus-header">當日任務</div>
                 <ul class="todo-list">
                     ${dayTasks.length ? dayTasks.map(t => `
-                        <li class="todo-item ${t.completed ? 'completed' : ''}">
+                        <li class="todo-item ${t.completed ? 'completed' : ''}" data-tag="${t.tag}">
                             <span class="todo-text">${t.text}</span>
                         </li>
                     `).join('') : '<p style="color: var(--text-secondary)">今日無任務</p>'}
