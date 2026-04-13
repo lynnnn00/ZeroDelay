@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#8B81C3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ZeroDelay">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.png">
+    <title>Zero Delay - 質感番茄鐘 & 行事曆任務</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Inter:wght@300;400;600&family=M+PLUS+Rounded+1c:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Swei Gothic (獅尾圓體) Webfont Fallback or Local */
+        @font-face {
+            font-family: 'Swei Gothic';
+            src: local('Swei Gothic'), local('獅尾圓體'), local('Swei Gothic CJK TC');
+        }
+
+        :root {
+            --bg-color: #0F0F0F;
+            --card-bg: rgba(28, 28, 30, 0.7);
+            --text-primary: #F2F2F7;
+            --text-secondary: #8E8E93;
+            --accent-silver: #D1D1D6;
+            --morandi-red: #A18276;
+            --morandi-green: #9A9E8F;
+            --morandi-blue: #8C969B;
+            --morandi-yellow: #B5A68D;
+            --fuji-blue: #8B81C3;
+            --konkokyo-blue: #211E55;
+            --rikyu-mouse: #707C74;
+            --blue-ink-brown: #373C38;
+            --blue-mouse: #566C73;
+            --brown: #08192D;
+            --white-oak: #DCB879;
+            --charm-brown: #876633;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glow-color: rgba(255, 255, 255, 0.03);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Swei Gothic', 'M PLUS Rounded 1c', 'Inter', 'Noto Sans TC', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* App Header */
+        .app-header {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo img {
+            height: 44px;
+            width: 44px;
+            border-radius: 50%;
+            object-fit: contain;
+        }
+
+        .logo span {
+            color: var(--fuji-blue);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px;
+            border-radius: 100px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 20px;
+            border-radius: 100px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Textured Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 40px;
+            z-index: 2;
+            animation: fadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .calendar-container {
+            width: 100%;
+            max-width: 1000px;
+            display: none; /* Hidden by default */
+            z-index: 2;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .stats-container {
+            width: 100%;
+            max-width: 1000px;
+            display: none; /* Hidden by default */
+            z-index: 2;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 24px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--fuji-blue);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .chart-box {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .tag-stats-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .tag-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+        }
+
+        .tag-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--fuji-blue);
+            color: var(--konkokyo-blue);
+        }
+
+        .tag-info {
+            flex: 1;
+        }
+
+        .tag-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .tag-duration {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .tag-percent {
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s ease;
+        }
+
+        /* Calendar Styles */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .view-modes {
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .view-btn.active {
+            background: var(--fuji-blue);
+            color: var(--konkokyo-blue);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding-bottom: 10px;
+        }
+
+        .calendar-cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-cell:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border-color);
+        }
+
+        .calendar-cell.today {
+            border-color: var(--fuji-blue);
+        }
+
+        .calendar-cell.other-month {
+            opacity: 0.2;
+        }
+
+        .cell-date {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .cell-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+
+        .task-dot {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--fuji-blue);
+        }
+
+        /* Weekly View */
+        .weekly-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+            min-height: 400px;
+        }
+
+        .week-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .week-day-title {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Daily View */
+        .daily-view {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .day-focus-header {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        /* Pomodoro Section */
+        .pomodoro {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .timer-modes {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px;
+            border-radius: 100px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px 24px;
+            border-radius: 100px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mode-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .custom-time-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 60px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            outline: none;
+            margin-left: 8px;
+            display: none;
+        }
+
+        .mode-btn.active + .custom-time-input {
+            display: inline-block;
+        }
+
+        .timer-circle {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .timer-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .timer-svg circle {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        .timer-bg {
+            stroke: rgba(255, 255, 255, 0.03);
+        }
+
+        .timer-progress {
+            stroke: var(--morandi-red);
+            stroke-dasharray: 880;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
+        }
+
+        .timer-display {
+            font-size: 5.5rem;
+            font-weight: 200;
+            color: var(--text-primary);
+            letter-spacing: -2px;
+            z-index: 2;
+        }
+
+        .timer-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: -10px;
+            z-index: 2;
+        }
+
+        .timer-tag-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            margin-top: 20px;
+            width: 180px; /* Adjust width as needed */
+            appearance: none; /* Remove default select arrow */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            cursor: pointer;
+        }
+
+        .timer-tag-select option {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .timer-controls {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .control-btn {
+            background: var(--text-primary);
+            color: var(--bg-color);
+            border: none;
+            padding: 16px 48px;
+            border-radius: 100px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            background: #ffffff;
+        }
+
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Todo Section */
+        .todo-section {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .todo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .todo-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .todo-count {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 12px;
+            border-radius: 100px;
+        }
+
+        .todo-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 16px;
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .todo-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .todo-date-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 8px;
+            border-radius: 10px;
+            outline: none;
+            color-scheme: dark;
+        }
+
+        .todo-tag-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 8px;
+            border-radius: 10px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .todo-tag-select option {
+            background: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .todo-input::placeholder {
+            color: #444;
+        }
+
+        .add-btn {
+            background: var(--morandi-yellow);
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            filter: brightness(1.1);
+            transform: scale(1.05);
+        }
+
+        .todo-list {
+            list-style: none;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .todo-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .todo-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            background: var(--fuji-blue); /* Default fallback */
+            padding: 16px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Tag-specific styles for Todo Items */
+        .todo-item[data-tag="工作"] {
+            background: var(--fuji-blue);
+        }
+        .todo-item[data-tag="工作"] .checkbox { border-color: var(--konkokyo-blue); }
+        .todo-item[data-tag="工作"].completed .checkbox { background: var(--konkokyo-blue); }
+        .todo-item[data-tag="工作"] .todo-text, .todo-item[data-tag="工作"] .delete-btn { color: var(--konkokyo-blue); }
+        
+        .todo-item[data-tag="學習"] {
+            background: var(--rikyu-mouse);
+        }
+        .todo-item[data-tag="學習"] .checkbox { border-color: var(--blue-ink-brown); }
+        .todo-item[data-tag="學習"].completed .checkbox { background: var(--blue-ink-brown); }
+        .todo-item[data-tag="學習"] .todo-text, .todo-item[data-tag="學習"] .delete-btn { color: var(--blue-ink-brown); }
+
+        .todo-item[data-tag="閱讀"] {
+            background: var(--blue-mouse);
+        }
+        .todo-item[data-tag="閱讀"] .checkbox { border-color: var(--brown); }
+        .todo-item[data-tag="閱讀"].completed .checkbox { background: var(--brown); }
+        .todo-item[data-tag="閱讀"] .todo-text, .todo-item[data-tag="閱讀"] .delete-btn { color: var(--brown); }
+
+        .todo-item[data-tag="運動"] {
+            background: var(--white-oak);
+        }
+        .todo-item[data-tag="運動"] .checkbox { border-color: var(--charm-brown); }
+        .todo-item[data-tag="運動"].completed .checkbox { background: var(--charm-brown); }
+        .todo-item[data-tag="運動"] .todo-text, .todo-item[data-tag="運動"] .delete-btn { color: var(--charm-brown); }
+
+        .todo-item:hover {
+            filter: brightness(1.05);
+            transform: translateX(4px);
+        }
+
+        .todo-item.completed {
+            opacity: 0.6;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+        }
+
+        .checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--konkokyo-blue); /* Default */
+            border-radius: 8px;
+            margin-right: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .todo-item.completed .checkbox {
+            background: var(--konkokyo-blue); /* Default */
+            border-color: var(--konkokyo-blue);
+        }
+
+        .todo-text-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .todo-text {
+            font-size: 0.95rem;
+            color: var(--konkokyo-blue); /* Default */
+            font-weight: 500;
+        }
+
+        .todo-date-badge {
+            font-size: 0.7rem;
+            margin-top: 2px;
+        }
+
+        .delete-btn {
+            background: transparent;
+            border: none;
+            color: var(--konkokyo-blue); /* Default */
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            opacity: 0.7;
+            transition: all 0.2s ease;
+        }
+
+        .todo-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .delete-btn:hover {
+            color: #ff453a;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 900px) {
+            body {
+                overflow-y: auto;
+                padding: 40px 20px;
+            }
+            .container {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .timer-circle {
+                width: 260px;
+                height: 260px;
+            }
+            .timer-display {
+                font-size: 4.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="logo">
+            <img src="logo.png" alt="Zero Delay Logo">
+            Zero<span>Delay</span>
+        </div>
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-view="focus">專注模式</button>
+            <button class="tab-btn" data-view="calendar">行事曆</button>
+            <button class="tab-btn" data-view="stats">資料統計</button>
+        </nav>
+    </header>
+
+    <div class="container" id="focus-view">
+        <!-- Pomodoro Card -->
+        <div class="card pomodoro">
+            <div class="timer-modes">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button class="mode-btn active" data-mode="custom" data-time="3540" data-color="var(--morandi-red)">自訂專注</button>
+                        <input type="number" class="custom-time-input" id="custom-minutes" value="59" min="1" max="999">
+                        <span id="min-label" style="font-size: 0.8rem; color: var(--text-secondary); display: none;">min</span>
+                    </div>
+                </div>
+                <button class="mode-btn" data-mode="focus" data-time="1500" data-color="var(--morandi-red)">專注 (25m)</button>
+                <button class="mode-btn" data-mode="break" data-time="300" data-color="var(--morandi-green)">短休</button>
+                <button class="mode-btn" data-mode="longBreak" data-time="900" data-color="var(--morandi-blue)">長休</button>
+            </div>
+            
+            <div class="timer-circle">
+                <svg class="timer-svg" viewBox="0 0 300 300">
+                    <circle class="timer-bg" cx="150" cy="150" r="140"></circle>
+                    <circle class="timer-progress" id="progress" cx="150" cy="150" r="140"></circle>
+                </svg>
+                <div class="timer-display" id="timer">59:00</div>
+                <div class="timer-label" id="timer-label">自訂專注</div>
+            </div>
+            
+            <select class="timer-tag-select" id="timer-tag-select">
+                <option value="學習">📚 學習</option>
+                <option value="工作">💼 工作</option>
+                <option value="閱讀">📖 閱讀</option>
+                <option value="運動">🏃 運動</option>
+            </select>
+            
+            <div class="timer-controls">
+                <button class="control-btn" id="start-btn">開始</button>
+                <button class="reset-btn" id="reset-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Todo List Card -->
+        <div class="card todo-section">
+            <div class="todo-header">
+                <h2>任務清單</h2>
+                <span class="todo-count" id="todo-count">0 項目</span>
+            </div>
+            
+            <div class="todo-input-group">
+                <div class="input-row">
+                    <input type="text" class="todo-input" id="todo-input" placeholder="接下來要做什麼？">
+                    <button class="add-btn" id="add-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                </div>
+                <div class="input-row" style="margin-top: 10px;">
+                    <input type="date" class="todo-date-input" id="todo-date-input" style="flex: 1;">
+                    <select class="todo-tag-select" id="todo-tag-select" style="flex: 1;">
+                        <option value="學習">📚 學習</option>
+                        <option value="工作">💼 工作</option>
+                        <option value="閱讀">📖 閱讀</option>
+                        <option value="運動">🏃 運動</option>
+                    </select>
+                </div>
+            </div>
+
+            <ul class="todo-list" id="todo-list">
+                <!-- Items will be added here -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Calendar View Container -->
+    <div class="calendar-container" id="calendar-view">
+         <div class="card">
+             <div class="calendar-header">
+                 <h2 id="current-period-label">2024年 4月</h2>
+                 <div class="calendar-controls">
+                     <div class="view-modes">
+                         <button class="view-btn active" data-cal-view="month">月</button>
+                         <button class="view-btn" data-cal-view="week">週</button>
+                         <button class="view-btn" data-cal-view="day">日</button>
+                     </div>
+                     <div class="timer-modes" style="margin-bottom: 0;">
+                         <button class="mode-btn" id="prev-period">&lt;</button>
+                         <button class="mode-btn" id="next-period">&gt;</button>
+                     </div>
+                 </div>
+             </div>
+             
+             <div id="calendar-content">
+                 <!-- Calendar grid/content will be injected here -->
+             </div>
+         </div>
+     </div>
+
+     <!-- Statistics View Container -->
+     <div class="stats-container" id="stats-view">
+        <div class="stats-grid">
+            <!-- Left Side: Summary & Donut Chart -->
+            <div class="card">
+                <div class="calendar-header">
+                    <h2>數據統計</h2>
+                    <div class="view-modes">
+                        <button class="view-btn active" data-stats-period="day">日</button>
+                        <button class="view-btn" data-stats-period="week">週</button>
+                        <button class="view-btn" data-stats-period="month">月</button>
+                    </div>
+                </div>
+
+                <div class="stats-summary">
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-focus-time">0h</span>
+                        <span class="stat-label">專注總時長</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="focus-sessions">0</span>
+                        <span class="stat-label">完成次數</span>
+                    </div>
+                </div>
+
+                <div class="chart-box">
+                    <canvas id="focus-donut-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Side: Bar Chart & Tags -->
+            <div class="card">
+                <div class="calendar-header">
+                    <h2>時段分佈</h2>
+                </div>
+                
+                <div class="chart-box" style="height: 200px; margin-bottom: 20px;">
+                    <canvas id="focus-bar-chart"></canvas>
+                </div>
+
+                <ul class="tag-stats-list" id="tag-stats-list">
+                    <!-- Dynamic tag stats -->
+                </ul>
+            </div>
+        </div>
+     </div>
+
+    <!-- Notification Sound -->
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <script>
+        // Navigation Logic
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const focusView = document.getElementById('focus-view');
+         const calendarView = document.getElementById('calendar-view');
+         const statsView = document.getElementById('stats-view');
+
+         tabBtns.forEach(btn => {
+             btn.addEventListener('click', () => {
+                 tabBtns.forEach(b => b.classList.remove('active'));
+                 btn.classList.add('active');
+                 
+                 // Hide all
+                 focusView.style.display = 'none';
+                 calendarView.style.display = 'none';
+                 statsView.style.display = 'none';
+
+                 if (btn.dataset.view === 'focus') {
+                     focusView.style.display = 'grid';
+                 } else if (btn.dataset.view === 'calendar') {
+                     calendarView.style.display = 'block';
+                     renderCalendar();
+                 } else if (btn.dataset.view === 'stats') {
+                     statsView.style.display = 'block';
+                     renderStats();
+                 }
+             });
+         });
+
+        // Timer Logic
+        let timeLeft = 3540;
+        let totalTime = 3540;
+        let timerId = null;
+        let currentMode = 'focus';
+
+        const timerDisplay = document.getElementById('timer');
+        const timerLabel = document.getElementById('timer-label');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const customMinutesInput = document.getElementById('custom-minutes');
+        const minLabel = document.getElementById('min-label');
+        const timerTagSelect = document.getElementById('timer-tag-select');
+        const progressCircle = document.getElementById('progress');
+        const alertSound = document.getElementById('alert-sound');
+
+        const CIRCUMFERENCE = 2 * Math.PI * 140;
+        progressCircle.style.strokeDasharray = CIRCUMFERENCE;
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const offset = CIRCUMFERENCE - (timeLeft / totalTime) * CIRCUMFERENCE;
+            progressCircle.style.strokeDashoffset = offset;
+            
+            document.title = `${timerDisplay.textContent} - Zero Delay`;
+        }
+
+        function toggleTimer() {
+            const timerTagSelect = document.getElementById('timer-tag-select');
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+                startBtn.textContent = '開始';
+                startBtn.style.background = 'var(--text-primary)';
+                customMinutesInput.disabled = false;
+                timerTagSelect.disabled = false;
+                if (timerTagSelect) timerTagSelect.disabled = false;
+            } else {
+                startBtn.textContent = '暫停';
+                startBtn.style.background = 'rgba(255,255,255,0.7)';
+                customMinutesInput.disabled = true;
+                timerTagSelect.disabled = true;
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        timerId = null;
+                        startBtn.textContent = '開始';
+                        customMinutesInput.disabled = false;
+                        timerTagSelect.disabled = false;
+                        alertSound.play();
+                        recordFocusSession();
+                        alert(currentMode === 'focus' || currentMode === 'custom' ? '專注時段結束！' : '休息結束！');
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            startBtn.textContent = '開始';
+            startBtn.style.background = 'var(--text-primary)';
+            customMinutesInput.disabled = false;
+            timerTagSelect.disabled = false;
+            const activeMode = document.querySelector('.mode-btn.active');
+            
+            if (activeMode.dataset.mode === 'custom') {
+                const mins = parseInt(customMinutesInput.value) || 1;
+                timeLeft = mins * 60;
+            } else {
+                timeLeft = parseInt(activeMode.dataset.time);
+            }
+            
+            totalTime = timeLeft;
+            updateTimerDisplay();
+        }
+
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                
+                // Show/hide custom input and label
+                if (currentMode === 'custom') {
+                    customMinutesInput.style.display = 'inline-block';
+                    minLabel.style.display = 'inline-block';
+                    const mins = parseInt(customMinutesInput.value) || 1;
+                    timeLeft = mins * 60;
+                } else {
+                    customMinutesInput.style.display = 'none';
+                    minLabel.style.display = 'none';
+                    timeLeft = parseInt(btn.dataset.time);
+                }
+                
+                totalTime = timeLeft;
+                if (timerLabel) {
+                    if (currentMode === 'focus' || currentMode === 'custom') {
+                        timerLabel.textContent = timerTagSelect.value;
+                    } else {
+                        timerLabel.textContent = btn.textContent;
+                    }
+                }
+                progressCircle.style.stroke = btn.dataset.color || 'var(--morandi-red)';
+                resetTimer();
+            });
+        });
+
+        customMinutesInput.addEventListener('input', () => {
+            if (currentMode === 'custom') {
+                const mins = parseInt(customMinutesInput.value) || 1;
+                timeLeft = mins * 60;
+                totalTime = timeLeft;
+                updateTimerDisplay();
+            }
+        });
+
+        timerTagSelect.addEventListener('change', () => {
+            if (timerLabel && (currentMode === 'focus' || currentMode === 'custom')) {
+                timerLabel.textContent = timerTagSelect.value;
+            }
+        });
+
+        startBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Todo Logic
+        const todoInput = document.getElementById('todo-input');
+        const todoDateInput = document.getElementById('todo-date-input');
+        const todoTagSelect = document.getElementById('todo-tag-select');
+        const addBtn = document.getElementById('add-btn');
+        const todoList = document.getElementById('todo-list');
+        const todoCount = document.getElementById('todo-count');
+
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        todoDateInput.value = today;
+
+        let todos = JSON.parse(localStorage.getItem('todos')) || [
+            { text: '歡迎使用 Zero Delay', completed: false, date: today, tag: '工作' },
+            { text: '規劃您的每日任務', completed: false, date: today, tag: '學習' }
+        ];
+
+        let focusSessions = JSON.parse(localStorage.getItem('focusSessions')) || [];
+
+        function recordFocusSession() {
+            if (currentMode !== 'focus' && currentMode !== 'custom') return;
+            
+            const session = {
+                date: new Date().toISOString().split('T')[0],
+                timestamp: new Date().getTime(),
+                duration: totalTime / 60, // in minutes
+                mode: currentMode,
+                tag: timerTagSelect.value
+            };
+            
+            focusSessions.push(session);
+            localStorage.setItem('focusSessions', JSON.stringify(focusSessions));
+        }
+
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+            updateCount();
+            if (calendarView.style.display === 'block') renderCalendar();
+        }
+
+        function updateCount() {
+            const activeTodos = todos.filter(t => !t.completed).length;
+            todoCount.textContent = `${activeTodos} 待辦`;
+        }
+
+        function renderTodos() {
+            todoList.innerHTML = '';
+            todos.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                li.setAttribute('data-tag', todo.tag);
+                
+                const tagEmoji = {
+                    '學習': '📚',
+                    '工作': '💼',
+                    '閱讀': '📖',
+                    '運動': '🏃'
+                }[todo.tag] || '📌';
+
+                const tagTextColors = {
+                    '學習': 'var(--blue-ink-brown)',
+                    '工作': 'var(--konkokyo-blue)',
+                    '閱讀': 'var(--brown)',
+                    '運動': 'var(--charm-brown)'
+                };
+                const currentTagTextColor = tagTextColors[todo.tag] || 'var(--konkokyo-blue)';
+
+                li.innerHTML = `
+                    <div class="checkbox" onclick="toggleTodo(${index})">
+                        ${todo.completed ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                    </div>
+                    <div class="todo-text-container">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="todo-text">${todo.text}</span>
+                            <span style="font-size: 0.7rem; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; color: ${currentTagTextColor};">${tagEmoji} ${todo.tag}</span>
+                        </div>
+                        <span class="todo-date-badge" style="color: ${currentTagTextColor}; opacity: 0.8;">${todo.date}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteTodo(${index})">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                `;
+                todoList.appendChild(li);
+            });
+            updateCount();
+        }
+
+        function addTodo() {
+            const text = todoInput.value.trim();
+            const date = todoDateInput.value;
+            const tag = todoTagSelect.value;
+            if (text && date) {
+                todos.unshift({ text, completed: false, date, tag });
+                todoInput.value = '';
+                saveTodos();
+                renderTodos();
+            }
+        }
+
+        window.toggleTodo = function(index) {
+            todos[index].completed = !todos[index].completed;
+            saveTodos();
+            renderTodos();
+        };
+
+        window.deleteTodo = function(index) {
+            todos.splice(index, 1);
+            saveTodos();
+            renderTodos();
+        };
+
+        addBtn.addEventListener('click', addTodo);
+        todoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTodo();
+        });
+
+        // Calendar Logic
+        let currentCalendarDate = new Date();
+        let currentCalendarView = 'month';
+
+        const calendarContent = document.getElementById('calendar-content');
+        const periodLabel = document.getElementById('current-period-label');
+        const viewBtns = document.querySelectorAll('.view-btn');
+        const prevBtn = document.getElementById('prev-period');
+        const nextBtn = document.getElementById('next-period');
+
+        function renderCalendar() {
+            calendarContent.innerHTML = '';
+            if (currentCalendarView === 'month') renderMonthView();
+            else if (currentCalendarView === 'week') renderWeekView();
+            else renderDayView();
+        }
+
+        function renderMonthView() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            periodLabel.textContent = `${year}年 ${month + 1}月`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            days.forEach(d => {
+                const h = document.createElement('div');
+                h.className = 'calendar-day-header';
+                h.textContent = d;
+                grid.appendChild(h);
+            });
+
+            // Empty cells for first week
+            for (let i = 0; i < firstDay; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-cell other-month';
+                grid.appendChild(cell);
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cell = document.createElement('div');
+                const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+                cell.className = `calendar-cell ${dateStr === today ? 'today' : ''}`;
+                
+                const dayTasks = todos.filter(t => t.date === dateStr);
+                
+                cell.innerHTML = `
+                    <div class="cell-date">${d}</div>
+                    <div class="cell-tasks">
+                        ${dayTasks.slice(0, 3).map(() => '<div class="task-dot"></div>').join('')}
+                    </div>
+                `;
+                cell.onclick = () => {
+                    currentCalendarDate = new Date(year, month, d);
+                    currentCalendarView = 'day';
+                    viewBtns.forEach(b => b.classList.remove('active'));
+                    document.querySelector('[data-cal-view="day"]').classList.add('active');
+                    renderCalendar();
+                };
+                grid.appendChild(cell);
+            }
+
+            calendarContent.appendChild(grid);
+        }
+
+        function renderWeekView() {
+            const startOfWeek = new Date(currentCalendarDate);
+            startOfWeek.setDate(currentCalendarDate.getDate() - currentCalendarDate.getDay());
+            
+            periodLabel.textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth() + 1}月`;
+
+            const grid = document.createElement('div');
+            grid.className = 'weekly-grid';
+
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(startOfWeek);
+                day.setDate(startOfWeek.getDate() + i);
+                const dateStr = day.toISOString().split('T')[0];
+                const dayTasks = todos.filter(t => t.date === dateStr);
+
+                const col = document.createElement('div');
+                col.className = 'week-column';
+                col.innerHTML = `
+                    <div class="week-day-title ${dateStr === today ? 'today' : ''}">
+                        ${['日', '一', '二', '三', '四', '五', '六'][i]} ${day.getDate()}
+                    </div>
+                    <div class="todo-list">
+                        ${dayTasks.map(t => `
+                            <div class="todo-item ${t.completed ? 'completed' : ''}" style="padding: 10px; border-radius: 12px; margin-bottom: 5px; font-size: 0.8rem;">
+                                <span class="todo-text">${t.text}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                grid.appendChild(col);
+            }
+            calendarContent.appendChild(grid);
+        }
+
+        function renderDayView() {
+            const dateStr = currentCalendarDate.toISOString().split('T')[0];
+            periodLabel.textContent = dateStr;
+
+            const dayTasks = todos.filter(t => t.date === dateStr);
+            const view = document.createElement('div');
+            view.className = 'daily-view';
+            view.innerHTML = `
+                <div class="day-focus-header">當日任務</div>
+                <ul class="todo-list">
+                    ${dayTasks.length ? dayTasks.map(t => `
+                        <li class="todo-item ${t.completed ? 'completed' : ''}">
+                            <span class="todo-text">${t.text}</span>
+                        </li>
+                    `).join('') : '<p style="color: var(--text-secondary)">今日無任務</p>'}
+                </ul>
+            `;
+            calendarContent.appendChild(view);
+        }
+
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                viewBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCalendarView = btn.dataset.calView;
+                renderCalendar();
+            });
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentCalendarView === 'month') currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            else if (currentCalendarView === 'week') currentCalendarDate.setDate(currentCalendarDate.getDate() - 7);
+            else currentCalendarDate.setDate(currentCalendarDate.getDate() - 1);
+            renderCalendar();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentCalendarView === 'month') currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            else if (currentCalendarView === 'week') currentCalendarDate.setDate(currentCalendarDate.getDate() + 7);
+            else currentCalendarDate.setDate(currentCalendarDate.getDate() + 1);
+            renderCalendar();
+        });
+
+        // Statistics Logic
+        let donutChart = null;
+        let barChart = null;
+        let currentStatsPeriod = 'day';
+
+        function renderStats() {
+            const periodBtns = document.querySelectorAll('[data-stats-period]');
+            periodBtns.forEach(btn => {
+                btn.onclick = () => {
+                    periodBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentStatsPeriod = btn.dataset.statsPeriod;
+                    updateStatsDisplay();
+                };
+            });
+            updateStatsDisplay();
+        }
+
+        function updateStatsDisplay() {
+            const now = new Date();
+            let filteredSessions = [];
+
+            if (currentStatsPeriod === 'day') {
+                const todayStr = now.toISOString().split('T')[0];
+                filteredSessions = focusSessions.filter(s => s.date === todayStr);
+            } else if (currentStatsPeriod === 'week') {
+                const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                filteredSessions = focusSessions.filter(s => new Date(s.timestamp) >= oneWeekAgo);
+            } else {
+                const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                filteredSessions = focusSessions.filter(s => new Date(s.timestamp) >= oneMonthAgo);
+            }
+
+            const totalMinutes = filteredSessions.reduce((acc, s) => acc + s.duration, 0);
+            const totalHours = (totalMinutes / 60).toFixed(1);
+            
+            document.getElementById('total-focus-time').textContent = `${totalHours}h`;
+            document.getElementById('focus-sessions').textContent = filteredSessions.length;
+
+            updateCharts(filteredSessions);
+            updateTagList(filteredSessions);
+        }
+
+        function updateCharts(sessions) {
+            const ctxDonut = document.getElementById('focus-donut-chart').getContext('2d');
+            const ctxBar = document.getElementById('focus-bar-chart').getContext('2d');
+
+            if (donutChart) donutChart.destroy();
+            if (barChart) barChart.destroy();
+
+            // Real tag distribution from sessions
+            const tagCounts = { '學習': 0, '工作': 0, '閱讀': 0, '運動': 0 };
+            sessions.forEach(s => {
+                if (tagCounts.hasOwnProperty(s.tag)) {
+                    tagCounts[s.tag] += s.duration;
+                }
+            });
+
+            const labels = Object.keys(tagCounts);
+            const dataValues = Object.values(tagCounts);
+            // Updated Colors: 學習(rikyu-mouse), 工作(fuji-blue), 閱讀(blue-mouse), 運動(white-oak)
+            const colors = ['#707C74', '#8B81C3', '#566C73', '#DCB879'];
+
+            donutChart = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Bar Chart: Focus time by day (last 7 days)
+            const last7Days = [...Array(7)].map((_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                return d.toISOString().split('T')[0];
+            }).reverse();
+
+            const barData = last7Days.map(date => {
+                return focusSessions.filter(s => s.date === date)
+                    .reduce((acc, s) => acc + s.duration, 0);
+            });
+
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: last7Days.map(d => d.split('-').slice(1).join('/')),
+                    datasets: [{
+                        label: '分鐘',
+                        data: barData,
+                        backgroundColor: '#8B81C3',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { display: false },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#8E8E93', font: { size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function updateTagList(sessions) {
+            const list = document.getElementById('tag-stats-list');
+            list.innerHTML = '';
+            
+            const tagData = {
+                '學習': { icon: '📚', color: '#707C74', textColor: '#373C38', minutes: 0 },
+                '工作': { icon: '💼', color: '#8B81C3', textColor: '#211E55', minutes: 0 },
+                '閱讀': { icon: '📖', color: '#566C73', textColor: '#08192D', minutes: 0 },
+                '運動': { icon: '🏃', color: '#DCB879', textColor: '#876633', minutes: 0 }
+            };
+
+            sessions.forEach(s => {
+                if (tagData[s.tag]) tagData[s.tag].minutes += s.duration;
+            });
+
+            const totalMinutes = sessions.reduce((acc, s) => acc + s.duration, 0) || 1;
+
+            Object.keys(tagData).forEach(tagName => {
+                const data = tagData[tagName];
+                const hours = Math.floor(data.minutes / 60);
+                const mins = Math.round(data.minutes % 60);
+                const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                const percent = Math.round((data.minutes / totalMinutes) * 100);
+
+                const item = document.createElement('li');
+                item.className = 'tag-stat-item';
+                // Apply background and text color to the list item based on the tag
+                item.style.background = data.color;
+
+                item.innerHTML = `
+                    <div class="tag-icon" style="background: rgba(255,255,255,0.2); color: ${data.textColor}">${data.icon}</div>
+                    <div class="tag-info">
+                        <div class="tag-name" style="color: ${data.textColor}">${tagName}</div>
+                        <div class="tag-duration" style="color: ${data.textColor}; opacity: 0.8">${durationStr}</div>
+                    </div>
+                    <div class="tag-percent" style="color: ${data.textColor}">${percent}%</div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Initial Render
+        renderTodos();
+        updateTimerDisplay();
+        progressCircle.style.stroke = 'var(--morandi-red)';
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

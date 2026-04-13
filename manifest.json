@@ -1,0 +1,23 @@
+{
+  "name": "ZeroDelay",
+  "short_name": "ZeroDelay",
+  "description": "結合番茄鐘工作法與任務清單的生產力工具",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0F0F0F",
+  "theme_color": "#8B81C3",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
